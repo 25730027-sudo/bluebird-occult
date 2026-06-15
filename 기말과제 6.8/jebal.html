@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>BLUEBIRD: THE OCCULT</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap');
+        
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Noto Serif KR', serif; overflow: hidden; display: flex; justify-content: center; align-items: center; color: #fff; }
+        
+        #bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: brightness(0.4) contrast(1.2); transition: 2s; z-index: 1; }
+        
+        /* 📍 메인 컨테이너: 3단 분할 레이아웃 설정 */
+        #container { 
+            position: relative; 
+            z-index: 10; 
+            width: 98%; 
+            max-width: 1400px; 
+            height: 85vh;
+            max-height: 750px;
+            display: none; 
+            flex-direction: row; 
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* 📍 [좌/우 캐릭터 공통 슬롯] */
+        .char-side-area {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(74, 144, 226, 0.1);
+        }
+
+        .char-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .char-box.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 📍 일러스트 기본 정렬 규격 */
+        .char-img {
+            position: absolute;
+            bottom: 60px; /* 이름표 위 기본 공간 */
+            z-index: 2;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* 이름표 스타일 */
+        .char-label {
+            position: absolute;
+            bottom: 15px;
+            z-index: 10;
+            font-size: 14px;
+            color: #4a90e2;
+            letter-spacing: 2px;
+            background: rgba(5, 5, 10, 0.95);
+            padding: 6px 22px;
+            border-radius: 20px;
+            border: 1px solid rgba(74, 144, 226, 0.5);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+
+        /* 백업 이모지 */
+        .char-placeholder {
+            font-size: 80px;
+            text-shadow: 0 0 40px rgba(74, 144, 226, 0.6);
+            animation: float 3s ease-in-out infinite alternate;
+            position: absolute;
+            bottom: 40%;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-15px); }
+        }
+
+        /* 📍 [중앙 구역] 선택지 및 스토리 인터페이스 공간 */
+        .interface-area {
+            flex: 1.2; 
+            height: 100%;
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            background: rgba(5, 5, 10, 0.96); 
+            border: 1px solid rgba(74, 144, 226, 0.3); 
+            backdrop-filter: blur(20px); 
+            box-shadow: 0 0 100px rgba(0,0,0,1); 
+            border-radius: 8px;
+        }
+
+        .game-header-title { font-size: 18px; color: #4a90e2; letter-spacing: 6px; text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(74, 144, 226, 0.3); padding-bottom: 10px; font-weight: bold; }
+        #scene-name { font-size: 12px; color: #888; letter-spacing: 2px; margin-bottom: 10px; text-align: right; font-style: italic; }
+
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(255,255,255,0.05); padding: 12px 5px; margin-bottom: 15px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); }
+        .stat { text-align: center; border-right: 1px solid rgba(255,255,255,0.1); }
+        .stat:last-child { border-right: none; }
+        .label { display: block; font-size: 11px; color: #aaa; margin-bottom: 5px; font-weight: bold; }
+        .val { font-weight: bold; font-size: 16px; }
+        #omega { color: #5dade2; } #upbo { color: #ec7063; } #phi { color: #58d68d; } #hp { color: #f4d03f; }
+
+        #speaker-name { font-size: 15px; color: #4a90e2; font-weight: bold; letter-spacing: 2px; margin-bottom: 12px; padding-left: 10px; border-left: 4px solid #4a90e2; }
+        #story-text { color: #fff; line-height: 1.8; font-size: 16px; min-height: 120px; margin-bottom: 20px; white-space: pre-wrap; }
+        
+        .choice-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .btn { display: block; width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #ccc; cursor: pointer; text-align: left; transition: 0.3s; font-family: inherit; font-size: 14px; border-radius: 4px; }
+        .btn:hover { background: rgba(74, 144, 226, 0.2); color: #fff; border-color: #4a90e2; padding-left: 20px; }
+
+        #opening { position: relative; z-index: 20; text-align: center; color: #fff; }
+        #opening h1 { font-size: 60px; letter-spacing: 20px; color: #4a90e2; text-shadow: 0 0 30px rgba(74, 144, 226, 0.8); margin-bottom: 60px; }
+        .occult-btn { padding: 25px 80px; font-size: 22px; background: rgba(0, 0, 0, 0.8); border: 1px solid #4a90e2; color: #4a90e2; cursor: pointer; transition: 0.5s; font-family: inherit; letter-spacing: 6px; }
+        .occult-btn:hover { background: #4a90e2; color: #fff; box-shadow: 0 0 40px rgba(74, 144, 226, 0.5); }
+
+        .developer-info { position: fixed; top: 25px; left: 30px; z-index: 30; font-size: 14px; letter-spacing: 2px; color: rgba(255, 255, 255, 0.65); font-family: inherit; border-left: 3px solid #4a90e2; padding-left: 12px; line-height: 1.6; }
+        .developer-info span { color: #4a90e2; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="bg"></div>
+
+    <div id="dev-header" class="developer-info">
+        DEVELOPER<br>
+        <span>25730027 김서원</span>
+    </div>
+
+    <div id="opening">
+        <h1>BLUEBIRD</h1>
+        <p style="color:#888; margin-bottom:50px; letter-spacing:5px;">THE OCCULT : 관측의 저주</p>
+        <button class="occult-btn" onclick="startGame()">심연의 눈을 뜨다</button>
+    </div>
+
+    <div id="container">
+        
+        <div class="char-side-area">
+            <div id="box-left" class="char-box">
+                <div id="emoji-left" class="char-placeholder">🧙‍♀️</div>
+                <img id="char-left" class="char-img" src="" alt="" onerror="this.style.display='none';">
+                <div id="name-left" class="char-label">상대방</div>
+            </div>
+        </div>
+
+        <div class="interface-area">
+            <div>
+                <div class="game-header-title">BLUEBIRD: THE OCCULT</div>
+                <div id="scene-name">Scene: LOADING...</div>
+                
+                <div class="stats-bar">
+                    <div class="stat"><span class="label">오염(Ω)</span><span id="omega" class="val">20</span></div>
+                    <div class="stat"><span class="label">업보(Karma)</span><span id="upbo" class="val">0</span></div>
+                    <div class="stat"><span class="label">명료(φ)</span><span id="phi" class="val">50</span></div>
+                    <div class="stat"><span class="label">체력(HP)</span><span id="hp" class="val">100</span></div>
+                </div>
+                
+                <div id="speaker-name">시스템</div>
+                <div id="story-text"></div>
+            </div>
+
+            <div>
+                <div id="choice-box" class="choice-box"></div>
+            </div>
+        </div>
+
+        <div class="char-side-area">
+            <div id="box-right" class="char-box">
+                <div id="emoji-right" class="char-placeholder">👁️</div>
+                <img id="char-right" class="char-img" src="" alt="" onerror="this.style.display='none';">
+                <div id="name-right" class="char-label">주인공</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let stats = { omega: 20, upbo: 0, phi: 50, hp: 100 };
+
+        const bgs = { 
+            opening: './image/opening.jpg', 
+            s1: './image/start.png', 
+            s2: './image/swamp.jpg', 
+            s3: './image/library.png', 
+            s4: './image/cave.png', 
+            s5: './image/castle.jpg',
+            micho_save: './image/micho_save.png',
+            shaman: './image/shaman.png' 
+        };
+
+        function getProtagonistImage() {
+            if (stats.omega >= 50) {
+                return './image/protagonist_c.png'; 
+            }
+            return './image/protagonist_b.png'; 
+        }
+
+        const chars = {
+            shaman: './image/shaman.png',           
+            micho_ghost: './image/micho_ghost.png', 
+            guardian: './image/guardian.png',       
+            bird_king: './image/bird_king.png'      
+        };
+
+        document.getElementById('bg').style.backgroundImage = `url('${bgs.opening}')`;
+
+        function startGame() {
+            document.getElementById('dev-header').style.display = 'none';
+            document.getElementById('opening').style.display = 'none';
+            document.getElementById('container').style.display = 'flex';
+            update('s1');
+        }
+
+        const data = {
+            s1: { 
+                scene: "S1: 청조촌 입구", speaker: "청조촌 무녀", bg: bgs.s1, 
+                leftChar: chars.shaman, leftName: "무녀", leftEmoji: "🧙‍♀️",
+                rightName: "주인공", rightEmoji: "👁️",
+                text: "'가련한 관측자여, 그 눈으로는 아무것도 구할 수 없다. 내가 주는 이 푸른 안구를 받아들여라. 비로소 동생이 보일 것이니.'", 
+                choices: [
+                    { t: "[수용] 푸른 안구를 이식한다.", n: 's2', e: { omega: 30 } },
+                    { t: "[저항] 무녀의 손을 뿌리친다.", n: 's2', e: { hp: -25, upbo: 10 } }
+                ]
+            },
+            s2: { 
+                scene: "S2: 망자의 늪", speaker: "미치의 환영", bg: bgs.s2, 
+                leftChar: chars.micho_ghost, leftName: "미치", leftEmoji: "👻",
+                rightName: "주인공", rightEmoji: "👁️",
+                text: "'언니... 나 여기 있어... 너무 추워... 왜 이제야 온 거야?'\n\n늪 속에서 동생의 목소리가 들리지만, 어딘가 기괴하게 뒤틀려 있습니다.", 
+                choices: [
+                    { t: "[불신] 환상을 외면하고 길을 찾는다.", n: 's3', e: { upbo: -10, phi: 15 } },
+                    { t: "[맹신] 소리가 나는 늪으로 뛰어든다.", n: 's3', e: { upbo: 15, phi: -20, omega: 20 } }
+                ]
+            },
+            s3: { 
+                scene: "S3: 경전 각", speaker: "도서관 수호자", bg: bgs.s3, 
+                leftChar: chars.guardian, leftName: "수호자", leftEmoji: "💀",
+                rightName: "주인공", rightEmoji: "👁️",
+                text: "'진실은 독과 같다. 더 깊이 알수록 너는 인간이 아니게 될 것이다. 그래도 이 기록을 탐하겠느냐?'", 
+                choices: [
+                    { t: "[지식] 금지된 경전을 읽는다.", n: 's4', e: { phi: 20, omega: 15 } },
+                    { t: "[침묵] 경전을 불태워 버린다.", n: 's4', e: { upbo: -15, hp: -10 } }
+                ]
+            },
+            s4: { 
+                scene: "S4: 탄생의 굴", speaker: "괴조들의 왕", bg: bgs.s4, 
+                leftChar: chars.bird_king, leftName: "괴조왕", leftEmoji: "🦅",
+                rightName: "주인공", rightEmoji: "👁️",
+                text: "'크헤헤... 이 아이는 우리의 제물이다! 구하고 싶나? 그럼 네 육신의 절반을 내놓아라!'", 
+                choices: [
+                    { t: "[희생] 내 피를 제물로 바친다.", n: 's5', e: { hp: -50, upbo: -25 } },
+                    { t: "[투쟁] 괴조의 심장을 겨냥한다.", n: 's5', e: { upbo: 40, omega: -10 } }
+                ]
+            },
+            s5: { 
+                scene: "S5: 밤의 궁전", speaker: "파랑새의 눈", bg: bgs.s5, 
+                leftChar: "", leftName: "", leftEmoji: "",
+                rightName: "주인공", rightEmoji: "👁️",
+                text: "'마침내 도달했구나. 이제 관측을 끝낼 시간이다. 스스로 파멸할 것인가, 아니면 이 저주받은 세계의 주인이 될 것인가?'", 
+                choices: [
+                    { t: "[해방] 이 모든 저주를 끊어낸다.", n: 'choice_liberation' },
+                    { t: "[군림] 동생의 운명까지 심연으로 잠식한다.", n: 'choice_reign' }
+                ]
+            }
+        };
+
+        function update(id) {
+            if(id === 'choice_liberation') {
+                return (stats.upbo < 20) ? finish('end_good') : finish('end_bad_wander');
+            }
+            if(id === 'choice_reign') {
+                return (stats.omega >= 90) ? finish('end_bad_occult') : finish('end_bad_fail');
+            }
+
+            const s = data[id];
+            document.getElementById('scene-name').innerText = "Location: " + s.scene;
+            document.getElementById('bg').style.backgroundImage = `url('${s.bg}')`;
+            document.getElementById('speaker-name').innerText = s.speaker;
+            document.getElementById('story-text').innerText = s.text;
+            for(let key in stats) document.getElementById(key).innerText = stats[key];
+
+            setupCharacter('left', s.leftChar, s.leftName, s.leftEmoji);
+            setupCharacter('right', getProtagonistImage(), s.rightName, s.rightEmoji);
+
+            const box = document.getElementById('choice-box');
+            box.innerHTML = '';
+            s.choices.forEach(c => {
+                const b = document.createElement('button');
+                b.className = 'btn'; b.innerText = c.t;
+                b.onclick = () => {
+                    if(c.e) for(let k in c.e) stats[k] += c.e[k];
+                    update(c.n);
+                };
+                box.appendChild(b);
+            });
+        }
+
+        function setupCharacter(direction, imgPath, name, emoji) {
+            const box = document.getElementById(`box-${direction}`);
+            const img = document.getElementById(`char-${direction}`);
+            const label = document.getElementById(`name-${direction}`);
+            const emojiEl = document.getElementById(`emoji-${direction}`);
+
+            if(!name) {
+                box.classList.remove('active');
+                return;
+            }
+
+            box.classList.add('active');
+            label.innerText = name;
+            emojiEl.innerText = emoji;
+
+            // 📍 [초강력 크기 뻥튀기 연출] 
+            if (name === "괴조왕") {
+                img.style.width = "auto";
+                img.style.height = "85%";          /* 슬롯 높이를 꽉 채우도록 설정 */
+                img.style.maxWidth = "none";       /* 가로 한계선 무력화 */
+                img.style.maxHeight = "none";      /* 세로 한계선 무력화 */
+                img.style.objectFit = "contain";
+                img.style.transform = "scale(1.85)";/* 1.85배 강제 스케일업으로 웅장하게 확대 */
+                img.style.bottom = "120px";        /* 커지면서 아래로 밀리는 현상 보정 위쪽 정렬 */
+            } else {
+                // 일반 캐릭터 복구용 표준 규격
+                img.style.width = "auto";
+                img.style.height = "85%";
+                img.style.maxWidth = "100%";
+                img.style.maxHeight = "85%";
+                img.style.objectFit = "contain";
+                img.style.transform = "scale(1)";
+                img.style.bottom = "60px";
+            }
+
+            if(imgPath) {
+                img.src = imgPath;
+                img.style.display = 'block';
+                img.onload = () => { 
+                    emojiEl.style.display = 'none'; 
+                };
+                img.onerror = () => { 
+                    img.style.display = 'none'; 
+                    emojiEl.style.display = 'block'; 
+                };
+            } else {
+                img.style.display = 'none';
+                emojiEl.style.display = 'block';
+            }
+        }
+
+        function finish(type) {
+            document.getElementById('scene-name').innerText = "Location: Destiny";
+            document.getElementById('box-left').classList.remove('active');
+            document.getElementById('box-right').classList.remove('active');
+
+            let mainTitle = ""; let subDesc = ""; let endImg = "";
+            let filterStyle = ""; 
+
+            if(type === 'end_good') {
+                endImg = bgs.micho_save; 
+                mainTitle = "[안식: 진정한 구원]";
+                subDesc = "당신은 마침내 동생과 함께 저주를 끊어내고 마을을 탈출했습니다. 이제 안개의 위협이 없는 곳에서 평온한 삶을 살아가세요.";
+                filterStyle = "brightness(0.7) contrast(1.5)";
+            } else {
+                if(type === 'end_bad_wander') {
+                    endImg = bgs.shaman;
+                    mainTitle = "[방랑: 불완전한 구원]";
+                    subDesc = "동생은 구했지만 당신의 업보가 발목을 잡습니다. 동생은 떠나보냈으나 당신은 영원히 안개 속을 떠돌게 될 것입니다.";
+                    filterStyle = "brightness(0.45) contrast(1.3) grayscale(0.1)"; 
+                } else if(type === 'end_bad_occult') {
+                    endImg = bgs.s5; 
+                    mainTitle = "[잠식: 심연의 주인]";
+                    subDesc = "인간이기를 포기한 당신은 파랑새의 저주를 완전히 받아들였습니다. 이제 당신이 이 기괴한 마을의 새로운 신입니다.";
+                    filterStyle = "brightness(0.05) contrast(2.0) grayscale(1.0) blur(1px)"; 
+                } else {
+                    endImg = bgs.s1;
+                    mainTitle = "[소멸: 공허의 파멸]";
+                    subDesc = "심연을 감당하기엔 당신의 그릇이 너무나도 작았습니다. 아무것도 구하지 못한 채, 당신은 어둠 속으로 먹혀버렸습니다.";
+                    filterStyle = "brightness(0.4) contrast(1.3) grayscale(0.3)"; 
+                }
+            }
+            
+            const bgElement = document.getElementById('bg');
+            bgElement.style.backgroundImage = `url('${endImg}')`;
+            bgElement.style.filter = filterStyle; 
+            
+            document.getElementById('speaker-name').innerText = "최종 운명";
+            const storyBox = document.getElementById('story-text');
+            storyBox.innerHTML = '';
+            const titleEl = document.createElement('h2');
+            titleEl.style.color = "#ffcc00"; titleEl.style.textAlign = "center"; titleEl.style.fontSize = "26px"; titleEl.innerText = mainTitle;
+            const descEl = document.createElement('p');
+            descEl.style.textAlign = "center"; descEl.style.lineHeight = "1.8"; descEl.innerText = subDesc;
+            
+            storyBox.appendChild(titleEl);
+            storyBox.appendChild(descEl);
+
+            const box = document.getElementById('choice-box');
+            box.innerHTML = '';
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'btn'; retryBtn.style.textAlign = "center";
+            retryBtn.innerText = "윤회 (처음으로)";
+            retryBtn.onclick = () => location.reload();
+            box.appendChild(retryBtn);
+        }
+    </script>
+</body>
+</html>
