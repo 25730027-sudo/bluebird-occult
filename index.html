@@ -186,7 +186,7 @@
             },
             s2: { 
                 scene: "S2: 망자의 늪", speaker: "미치의 환영", 
-                sceneImg: './image/S2.mp4', /* 💡 S2 비디오 파일로 변경 완료 */
+                sceneImg: './image/S2.mp4', 
                 leftName: "미치",
                 text: "'언니... 나 여기 있어... 너무 추워... 왜 이제야 온 거야?'\n\n늪 속에서 동생의 목소리가 들리지만, 어딘가 기괴하게 뒤틀려 있습니다.", 
                 choices: [
@@ -256,7 +256,7 @@
             });
         }
 
-        // 🔄 확장자를 실시간 체크하여 이미지 태그와 비디오 태그를 스위칭하고 연출하는 함수
+        // 🔄 [강력한 보완] 안정적인 영상 스위칭 처리를 구현한 미디어 함수
         function setupSceneImage(direction, imgPath, name) {
             const box = document.getElementById(`box-${direction}`);
             const img = document.getElementById(`scene-img-${direction}`);
@@ -275,10 +275,28 @@
                 if(imgPath.toLowerCase().endsWith('.mp4')) {
                     if(img) img.style.display = 'none';
                     if(video) {
+                        // 1. 기존 비디오 소스를 명확히 비워주어 브라우저 버퍼 버그를 방지
+                        video.pause();
+                        video.removeAttribute('src');
+                        video.load();
+
+                        // 2. 새로운 소스 부여 및 속성 강제 재부여
                         video.src = imgPath;
                         video.style.display = 'block';
+                        video.muted = true;
+                        video.playsInline = true;
+                        
+                        // 3. 브라우저가 준비되면 플레이 요청
                         video.load();
-                        video.play().catch(e => console.log("Browser Policy Skip"));
+                        const playPromise = video.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => {
+                                console.log("자동재생 차단 우회 활성화");
+                                // 혹시 차단될 경우 유저가 화면을 한 번 누르면 바로 재생되게 예외 처리
+                                const runPlay = () => { video.play(); document.removeEventListener('click', runPlay); };
+                                document.addEventListener('click', runPlay);
+                            });
+                        }
                     }
                 } else {
                     if(video) { video.style.display = 'none'; video.pause(); }
