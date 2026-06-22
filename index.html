@@ -173,7 +173,6 @@
             update('s1');
         }
 
-        /* 📍 S3만 mp4 확장자로 지정, 나머지는 png 이미지 유지 */
         const data = {
             s1: { 
                 scene: "S1: 청조촌 입구", speaker: "청조촌 무녀", 
@@ -187,7 +186,7 @@
             },
             s2: { 
                 scene: "S2: 망자의 늪", speaker: "미치의 환영", 
-                sceneImg: './image/S2.png', 
+                sceneImg: './image/S2.mp4', /* 💡 S2 비디오 파일로 변경 완료 */
                 leftName: "미치",
                 text: "'언니... 나 여기 있어... 너무 추워... 왜 이제야 온 거야?'\n\n늪 속에서 동생의 목소리가 들리지만, 어딘가 기괴하게 뒤틀려 있습니다.", 
                 choices: [
@@ -197,7 +196,7 @@
             },
             s3: { 
                 scene: "S3: 경전 각", speaker: "도서관 수호자", 
-                sceneImg: './image/S3.mp4', /* 💡 S3 비디오 교체 완료 */
+                sceneImg: './image/S3.mp4', 
                 leftName: "수호자",
                 text: "'진실은 독과 같다. 더 깊이 알수록 너는 인간이 아니게 될 것이다. 그래도 이 기록을 탐하겠느냐?'", 
                 choices: [
@@ -299,7 +298,6 @@
             
             let mainTitle = ""; let subDesc = ""; let finishImg = "";
 
-            /* 📍 엔딩 분기 조건 체크: end_c만 mp4 영상 파일로 분기 설정 */
             if(type === 'end_good') {
                 mainTitle = "[안식: 진정한 구원]";
                 subDesc = "당신은 마침내 동생과 함께 저주를 끊어내고 마을을 탈출했습니다. 이제 안개의 위협이 없는 곳에서 평온한 삶을 살아가세요.";
@@ -315,7 +313,7 @@
             } else {
                 mainTitle = "[소멸: 공허의 파멸]";
                 subDesc = "심연을 감당하기엔 당신의 그릇이 너무나도 작았습니다. 아무것도 구하지 못한 채, 당신은 어둠 속으로 먹혀버렸습니다.";
-                finishImg = './image/end_c.mp4'; /* 💡 소멸 엔딩 비디오 교체 완료 */
+                finishImg = './image/end_c.mp4'; 
             }
             
             if(finishImg) {
